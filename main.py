@@ -53,6 +53,15 @@ async def list_channels_endpoint():
     except Exception as e:
         return {"error": str(e)}
 
+@app.get("/")
+async def home():
+    return {
+        "app_name": settings.APP_NAME,
+        "app_version": settings.APP_VERSION,
+        "app_description": settings.APP_DESCRIPTION,
+        "message": "Hi from Ayobamidele Ewetuga."
+    }
+
 if __name__ == "__main__":
     from bot.core import list_channels_cli
     list_channels_cli()
