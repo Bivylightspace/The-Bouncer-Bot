@@ -6,6 +6,10 @@ from starlette.responses import JSONResponse
 from urllib.parse import parse_qs
 import re
 
+import logging
+
+logger = logging.getLogger("slack")
+logging.basicConfig(level=logging.INFO)
 app = FastAPI()
 verifier = SignatureVerifier(signing_secret=getattr(settings, 'SLACK_SIGNING_SECRET', ''))
 
@@ -17,23 +21,38 @@ def parse_slack_form(request: Request):
         channel_id = form.get("channel_id", [""])[0]
         # Extract user IDs from <@USERID> mentions
         user_ids = re.findall(r"<@([A-Z0-9]+)>", text)
-        # If no user IDs, treat as usernames (space/comma split)
-        if not user_ids:
-            usernames = [u.strip() for u in text.replace(',', ' ').split() if u.strip()]
-            return usernames, channel_id, False
-        return user_ids, channel_id, True
+        if user_ids:
+            return user_ids, channel_id, True
+        # Fall back to raw usernames
+        raw_words = text.replace(',', ' ').split()
+        usernames = [
+            word.strip().lstrip('@').replace(" ", "").lower()
+            for word in raw_words if word.strip()
+        ]
+        return usernames, channel_id, False
     return inner
+
 
 @app.post("/slack/add_user")
 async def add_user(request: Request):
+    # 🔍 Log raw body
+    raw_body = await request.body()
+    logger.info(f"Slack raw body: {raw_body.decode()}")
+
+    # 🔍 Parse and log structured form data
+    form_data = parse_qs(raw_body.decode())
+    logger.info(f"Slack parsed form: {form_data}")
+
+    # ✅ Proceed with your logic
     ids_or_names, channel_id, is_user_id = await parse_slack_form(request)()
     if is_user_id:
-        # Use user IDs directly
         from bot.core import invite_user_ids_to_channel
         results = invite_user_ids_to_channel(ids_or_names, channel_id)
     else:
         results = invite_users_to_channel(ids_or_names, channel_id)
+
     return {"text": "\n".join(results)}
+
 
 @app.post("/slack/remove_user")
 async def remove_user(request: Request):
