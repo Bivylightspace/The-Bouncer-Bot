@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request, Form
 from slack_sdk.signature import SignatureVerifier
 from bot.config import settings
-from bot import get_user_id_by_email, invite_user_to_channel, remove_user_from_channel
+from bot.core import get_user_id_by_email, invite_user_to_channel, remove_user_from_channel
 from bot.core import list_channels
 
 app = FastAPI()
