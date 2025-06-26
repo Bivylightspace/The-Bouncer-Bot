@@ -19,11 +19,14 @@ def parse_slack_form(request: Request):
         form = parse_qs(body.decode())
         text = form.get("text", [""])[0]
         channel_id = form.get("channel_id", [""])[0]
-        # Extract user IDs from <@USERID> mentions
-        user_ids = re.findall(r"<@([A-Z0-9]+)>", text)
+
+        # ✅ Fix: Match both <@U123> and <@U123|name>
+        user_ids = re.findall(r"<@([A-Z0-9]+)(?:\|[^>]+)?>", text)
+
         if user_ids:
             return user_ids, channel_id, True
-        # Fall back to raw usernames
+
+        # Fallback to comma/space separated usernames
         raw_words = text.replace(',', ' ').split()
         usernames = [
             word.strip().lstrip('@').replace(" ", "").lower()
@@ -31,6 +34,7 @@ def parse_slack_form(request: Request):
         ]
         return usernames, channel_id, False
     return inner
+
 
 
 @app.post("/slack/add_user")
