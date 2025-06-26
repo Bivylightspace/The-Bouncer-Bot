@@ -60,6 +60,14 @@ async def add_user(request: Request):
 
 @app.post("/slack/remove_user")
 async def remove_user(request: Request):
+    # 🔍 Log raw body
+    raw_body = await request.body()
+    logger.info(f"Slack raw body: {raw_body.decode()}")
+
+    # 🔍 Parse and log structured form data
+    form_data = parse_qs(raw_body.decode())
+    logger.info(f"Slack parsed form: {form_data}")
+    
     ids_or_names, channel_id, is_user_id = await parse_slack_form(request)()
     if is_user_id:
         from bot.core import remove_user_ids_from_channel
