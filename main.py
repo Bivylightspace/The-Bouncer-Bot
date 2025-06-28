@@ -77,7 +77,7 @@ async def list_channels_endpoint():
         return {"error": str(e)}
 
 
-@app.post("/slack/add/trenchs")
+@app.post("/slack/add_trenchs")
 async def add_to_trenches(request: Request):
     raw_body = await request.body()
     logger.info(f"Slack raw body: {raw_body.decode()}")
